@@ -10,7 +10,8 @@ namespace Game.Systems
     [BurstCompile]
     public partial struct UnitMoveJob: IJobEntity
     {
-        public float DeltaTime;
+        public float DeltaTime { get; set; }
+        
         public void Execute(ref LocalTransform localTransform, in UnitMove unitMove, ref PhysicsVelocity physicsVelocity)
         {
             var targetPosition = unitMove.TargetPosition;
