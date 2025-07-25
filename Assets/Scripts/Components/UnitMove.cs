@@ -1,9 +1,7 @@
-
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
-namespace Game
+namespace Game.Components
 {
     public struct UnitMove : IComponentData
     {

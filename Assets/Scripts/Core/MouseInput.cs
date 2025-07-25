@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Game
+namespace Game.Core
 {
     public class MouseInput : MonoBehaviour
     {

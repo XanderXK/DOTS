@@ -1,17 +1,24 @@
+using Game.Components;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
-using UnityEngine;
 
-namespace Game
+namespace Game.Systems
 {
     public partial struct UnitMoveSystem : ISystem
     {
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var unitMoveJob = new UnitMoveJob
+            {
+                DeltaTime = SystemAPI.Time.DeltaTime
+            };
+            
+            unitMoveJob.ScheduleParallel();
+            /*
             foreach (var (localTransform, unitMove, physicsVelocity)
                      in SystemAPI.Query<RefRW<LocalTransform>, RefRO<UnitMove>, RefRW<PhysicsVelocity>>())
             {
@@ -36,6 +43,7 @@ namespace Game
                 localTransform.ValueRW.Rotation = rotation;
                 physicsVelocity.ValueRW.Linear = moveDirection * unitMove.ValueRO.MoveSpeed;
             }
+            */
         }
     }
 }

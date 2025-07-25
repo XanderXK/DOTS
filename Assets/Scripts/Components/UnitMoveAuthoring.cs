@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Game
+namespace Game.Components
 {
     public class UnitMoveAuthoring : MonoBehaviour
     {

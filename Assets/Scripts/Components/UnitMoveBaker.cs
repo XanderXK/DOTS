@@ -1,7 +1,6 @@
 using Unity.Entities;
-using UnityEngine;
 
-namespace Game
+namespace Game.Components
 {
     public class UnitMoveBaker : Baker<UnitMoveAuthoring>
     {

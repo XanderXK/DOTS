@@ -1,10 +1,10 @@
-using System;
+using Game.Components;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace Game
+namespace Game.Core
 {
     public class Selector : MonoBehaviour
     {
@@ -26,7 +26,7 @@ namespace Game
                     var query = new EntityQueryBuilder(Allocator.Temp)
                         .WithAll<UnitMove>().Build(entityManager);
                     
-                    var entityArray = query.ToEntityArray(Allocator.Temp);
+                    // var entityArray = query.ToEntityArray(Allocator.Temp);
                     var moveArray = query.ToComponentDataArray<UnitMove>(Allocator.Temp);
                     for (var i = 0; i < moveArray.Length; i++)
                     {
