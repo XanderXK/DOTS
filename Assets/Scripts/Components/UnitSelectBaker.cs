@@ -9,7 +9,7 @@ namespace Game.Components
             var entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent(entity, new UnitSelect
             {
-                IsSelected = authoring.IsSelected
+                VisualEntity = GetEntity(authoring.VisualElement, TransformUsageFlags.Dynamic)
             });
         }
     }

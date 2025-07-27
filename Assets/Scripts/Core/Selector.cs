@@ -24,7 +24,7 @@ namespace Game.Core
                 {
                     var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
                     var query = new EntityQueryBuilder(Allocator.Temp)
-                        .WithAll<UnitMove>().Build(entityManager);
+                        .WithAll<UnitMove, UnitSelect>().Build(entityManager);
                     
                     // var entityArray = query.ToEntityArray(Allocator.Temp);
                     var moveArray = query.ToComponentDataArray<UnitMove>(Allocator.Temp);

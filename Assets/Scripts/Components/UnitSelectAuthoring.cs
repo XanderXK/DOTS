@@ -4,6 +4,6 @@ namespace Game.Components
 {
     public class UnitSelectAuthoring: MonoBehaviour
     {
-        public bool IsSelected { get; set; }
+   [field:SerializeField]     public GameObject VisualElement { get; set; }
     }
 }
