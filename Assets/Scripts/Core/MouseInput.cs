@@ -24,7 +24,6 @@ namespace Game.Core
                 {
                     var targetPosition = hit.point;
                     OnMouseClick?.Invoke(targetPosition);
-                    Debug.Log($"Clicked at position: {targetPosition}");
                     LastClickPosition = targetPosition;
                 }
             }
