@@ -1,6 +1,7 @@
 using Game.Components;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
@@ -22,6 +23,11 @@ namespace Game.Core
 
         private void Update()
         {
+            if (Mouse.current.middleButton.wasPressedThisFrame)
+            {
+                SpawnUnits();
+            }
+            
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 _selectorRect.gameObject.SetActive(true);
@@ -48,6 +54,25 @@ namespace Game.Core
             if (Mouse.current.rightButton.wasPressedThisFrame)
             {
                 MoveSelectedUnits();
+            }
+        }
+
+        private void SpawnUnits()
+        {
+            var ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+            if (Physics.Raycast(ray, out var hit))
+            {
+                var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+                var query = entityManager.CreateEntityQuery(typeof(Spawner));
+                if (query.IsEmptyIgnoreFilter) return;
+
+                var spawnerEntity = query.GetSingletonEntity();
+                var spawner = entityManager.GetComponentData<Spawner>(spawnerEntity);
+                if (spawner.SpawnRequested) return;
+                spawner.SpawnRequested = true;
+                spawner.SpawnPosition = hit.point+Vector3.up;
+                entityManager.SetComponentData(spawnerEntity, spawner);
+                query.Dispose();
             }
         }
 
@@ -82,7 +107,7 @@ namespace Game.Core
                     GroupIndex = 0
                 }
             };
-            
+
             if (collisionWorld.CastRay(raycastInput, out var hit))
             {
                 var entity = hit.Entity;
@@ -156,16 +181,40 @@ namespace Game.Core
 
                 var selectsArray = query.ToComponentDataArray<UnitSelect>(Allocator.Temp);
                 var moveArray = query.ToComponentDataArray<UnitMove>(Allocator.Temp);
+                var movePositions = GetMovePositions(hit.point, selectsArray.Length, 1.5f);
                 for (var i = 0; i < moveArray.Length; i++)
                 {
                     if (!selectsArray[i].IsSelected) continue;
                     var unitMove = moveArray[i];
-                    unitMove.TargetPosition = hit.point;
+                    unitMove.TargetPosition = movePositions[i];
                     moveArray[i] = unitMove;
                 }
 
                 query.CopyFromComponentDataArray(moveArray);
             }
+        }
+
+        private NativeArray<float3> GetMovePositions(float3 centerPosition, int unitCount, float unitSpacing)
+        {
+            var columns = Mathf.CeilToInt(Mathf.Sqrt(unitCount));
+            var rows = Mathf.CeilToInt((float)unitCount / columns);
+
+            var result = new NativeArray<float3>(unitCount, Allocator.Temp);
+            var totalWidth = (columns - 1) * unitSpacing;
+            var totalHeight = (rows - 1) * unitSpacing;
+            var index = 0;
+            for (var row = 0; row < rows && index < unitCount; row++)
+            {
+                for (var column = 0; column < columns && index < unitCount; column++)
+                {
+                    var xOffset = column * unitSpacing - totalWidth / 2f;
+                    var zOffset = row * unitSpacing - totalHeight / 2f;
+                    result[index] = new float3(centerPosition.x + xOffset, centerPosition.y, centerPosition.z + zOffset);
+                    index++;
+                }
+            }
+
+            return result;
         }
     }
 }

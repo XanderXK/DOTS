@@ -10,7 +10,8 @@ namespace Game.Components
             AddComponent(entity, new UnitMove
             {
                 MoveSpeed = authoring.MoveSpeed,
-                RotationSpeed = authoring.RotationSpeed
+                RotationSpeed = authoring.RotationSpeed,
+                TargetPosition = authoring.transform.position
             });
         }
     }
