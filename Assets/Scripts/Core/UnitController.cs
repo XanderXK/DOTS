@@ -1,6 +1,7 @@
 using Game.Components;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -31,7 +32,7 @@ namespace Game.Core
             }
             else if (Mouse.current.leftButton.wasReleasedThisFrame)
             {
-                SelectUnitsInRect();
+                SelectUnits();
                 _selectorRect.gameObject.SetActive(false);
                 _isSelecting = false;
             }
@@ -49,13 +50,58 @@ namespace Game.Core
                 MoveSelectedUnits();
             }
         }
-        
+
+        private void SelectUnits()
+        {
+            UnselectAllUnits();
+            if (_selectorRect.sizeDelta.magnitude > 0.1f)
+            {
+                SelectUnitsInRect();
+            }
+            else
+            {
+                SelectSingleUnit();
+            }
+        }
+
+        private void SelectSingleUnit()
+        {
+            var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var query = entityManager.CreateEntityQuery(typeof(PhysicsWorldSingleton));
+            var physicsWorldSingleton = query.GetSingleton<PhysicsWorldSingleton>();
+            var collisionWorld = physicsWorldSingleton.CollisionWorld;
+            var cameraRay = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
+            var raycastInput = new RaycastInput
+            {
+                Start = cameraRay.GetPoint(0f),
+                End = cameraRay.GetPoint(999f),
+                Filter = new CollisionFilter
+                {
+                    BelongsTo = ~0u,
+                    CollidesWith = 1 << 6,
+                    GroupIndex = 0
+                }
+            };
+            
+            if (collisionWorld.CastRay(raycastInput, out var hit))
+            {
+                var entity = hit.Entity;
+                if (entityManager.HasComponent<UnitSelect>(entity))
+                {
+                    var unitSelect = entityManager.GetComponentData<UnitSelect>(entity);
+                    unitSelect.IsSelected = true;
+                    entityManager.RemoveComponent<Disabled>(unitSelect.VisualEntity);
+                    entityManager.SetComponentData(entity, unitSelect);
+                }
+            }
+        }
+
         private void SelectUnitsInRect()
         {
             var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
             var query = new EntityQueryBuilder(Allocator.Temp)
                 .WithAll<LocalTransform, UnitSelect>().Build(entityManager);
-            
+
             var selectsArray = query.ToComponentDataArray<UnitSelect>(Allocator.Temp);
             var localTransformArray = query.ToComponentDataArray<LocalTransform>(Allocator.Temp);
             for (var i = 0; i < localTransformArray.Length; i++)
@@ -65,13 +111,34 @@ namespace Game.Core
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     _selectorRect,
                     screenPosition,
-                    null, 
+                    null,
                     out var localPoint);
                 var isInside = _selectorRect.rect.Contains(localPoint);
                 var unitSelect = selectsArray[i];
-                unitSelect.IsSelected = isInside;
-                
-                
+                if (isInside)
+                {
+                    unitSelect.IsSelected = true;
+                    entityManager.RemoveComponent<Disabled>(unitSelect.VisualEntity);
+                }
+
+                selectsArray[i] = unitSelect;
+            }
+
+            query.CopyFromComponentDataArray(selectsArray);
+        }
+
+        private void UnselectAllUnits()
+        {
+            var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+            var query = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<UnitSelect>().Build(entityManager);
+
+            var selectsArray = query.ToComponentDataArray<UnitSelect>(Allocator.Temp);
+            for (var i = 0; i < selectsArray.Length; i++)
+            {
+                var unitSelect = selectsArray[i];
+                unitSelect.IsSelected = false;
+                entityManager.AddComponent<Disabled>(unitSelect.VisualEntity);
                 selectsArray[i] = unitSelect;
             }
 
