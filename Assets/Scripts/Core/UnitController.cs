@@ -1,3 +1,4 @@
+using System;
 using Game.Components;
 using Unity.Collections;
 using Unity.Entities;
@@ -12,6 +13,7 @@ namespace Game.Core
     public class UnitController : MonoBehaviour
     {
         [SerializeField] private RectTransform _selectorRect;
+        private RectTransform _rootRectTransform;
         private Camera _mainCamera;
         private bool _isSelecting;
         private Vector2 _startPosition;
@@ -19,6 +21,7 @@ namespace Game.Core
         private void Awake()
         {
             _mainCamera = Camera.main;
+            _rootRectTransform = GetComponent<RectTransform>();
         }
 
         private void Update()
@@ -27,7 +30,7 @@ namespace Game.Core
             {
                 SpawnUnits();
             }
-            
+
             if (Mouse.current.leftButton.wasPressedThisFrame)
             {
                 _selectorRect.gameObject.SetActive(true);
@@ -47,8 +50,8 @@ namespace Game.Core
             {
                 var currentPosition = Mouse.current.position.ReadValue();
                 var sizeDelta = currentPosition - _startPosition;
-                _selectorRect.sizeDelta = new Vector2(Mathf.Abs(sizeDelta.x), Mathf.Abs(sizeDelta.y));
-                _selectorRect.anchoredPosition = _startPosition + sizeDelta / 2;
+                _selectorRect.sizeDelta = new Vector2(Mathf.Abs(sizeDelta.x), Mathf.Abs(sizeDelta.y)) / _rootRectTransform.localScale;
+                _selectorRect.anchoredPosition = (_startPosition + sizeDelta / 2) / _rootRectTransform.localScale;
             }
 
             if (Mouse.current.rightButton.wasPressedThisFrame)
@@ -70,7 +73,7 @@ namespace Game.Core
                 var spawner = entityManager.GetComponentData<Spawner>(spawnerEntity);
                 if (spawner.SpawnRequested) return;
                 spawner.SpawnRequested = true;
-                spawner.SpawnPosition = hit.point+Vector3.up;
+                spawner.SpawnPosition = hit.point + Vector3.up;
                 entityManager.SetComponentData(spawnerEntity, spawner);
                 query.Dispose();
             }

@@ -1,0 +1,10 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI%20Toolkit/MainUI.uss?fileID=7433441132597879392&amp;guid=b351c5401b23d403686dbe408a8eae3e&amp;type=3#MainUI" />
+    <ui:VisualElement name="Root" style="flex-grow: 1; justify-content: flex-end;">
+        <ui:VisualElement name="BottomPanel" style="flex-grow: 1; justify-content: flex-end; padding-left: 25px; padding-bottom: 25px;">
+            <ui:Label text="Left Mouse Button - Select Units" name="Label" class="infoLabel" />
+            <ui:Label text="Middle Mouse Button - Create Units" name="Label" class="infoLabel" />
+            <ui:Label text="Right Mouse Button - Move Selected Units" name="Label" class="infoLabel" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
