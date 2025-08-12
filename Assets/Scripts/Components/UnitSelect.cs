@@ -1,5 +1,4 @@
 using Unity.Entities;
-using Unity.Transforms;
 
 namespace Game.Components
 {
@@ -8,5 +7,4 @@ namespace Game.Components
         public bool IsSelected;
         public Entity VisualEntity;
     }
- 
 }

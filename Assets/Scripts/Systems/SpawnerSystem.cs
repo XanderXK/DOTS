@@ -14,7 +14,7 @@ namespace Game.Systems
             foreach (var spawner in SystemAPI.Query<RefRW<Spawner>>())
             {
                 if (!spawner.ValueRO.SpawnRequested) continue;
-                for (int i = 0; i < spawner.ValueRO.Count; i++)
+                for (var i = 0; i < spawner.ValueRO.Count; i++)
                 {
                     var entity = ecb.Instantiate(spawner.ValueRO.UnitPrefab);
                     var position = spawner.ValueRO.SpawnPosition

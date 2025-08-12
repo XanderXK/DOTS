@@ -7,21 +7,37 @@ using Unity.Physics;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Plane = UnityEngine.Plane;
 
 namespace Game.Core
 {
     public class UnitController : MonoBehaviour
     {
-        [SerializeField] private RectTransform _selectorRect;
-        private RectTransform _rootRectTransform;
         private Camera _mainCamera;
-        private bool _isSelecting;
-        private Vector2 _startPosition;
+        private Selector _selector;
 
         private void Awake()
         {
             _mainCamera = Camera.main;
-            _rootRectTransform = GetComponent<RectTransform>();
+            _selector = FindAnyObjectByType<Selector>();
+        }
+
+        private void OnEnable()
+        {
+            _selector.OnSelectionEnded += OnSelectionEnded;
+        }
+
+        private void OnSelectionEnded(Vector2 sizeDelta)
+        {
+            UnselectAllUnits();
+            if (sizeDelta.magnitude > 0.1f)
+            {
+                SelectMultipleUnits();
+            }
+            else
+            {
+                SelectSingleUnit();
+            }
         }
 
         private void Update()
@@ -29,29 +45,6 @@ namespace Game.Core
             if (Mouse.current.middleButton.wasPressedThisFrame)
             {
                 SpawnUnits();
-            }
-
-            if (Mouse.current.leftButton.wasPressedThisFrame)
-            {
-                _selectorRect.gameObject.SetActive(true);
-                _selectorRect.position = Mouse.current.position.ReadValue();
-                _startPosition = Mouse.current.position.ReadValue();
-                _selectorRect.sizeDelta = Vector2.zero;
-                _isSelecting = true;
-            }
-            else if (Mouse.current.leftButton.wasReleasedThisFrame)
-            {
-                SelectUnits();
-                _selectorRect.gameObject.SetActive(false);
-                _isSelecting = false;
-            }
-
-            if (_isSelecting)
-            {
-                var currentPosition = Mouse.current.position.ReadValue();
-                var sizeDelta = currentPosition - _startPosition;
-                _selectorRect.sizeDelta = new Vector2(Mathf.Abs(sizeDelta.x), Mathf.Abs(sizeDelta.y)) / _rootRectTransform.localScale;
-                _selectorRect.anchoredPosition = (_startPosition + sizeDelta / 2) / _rootRectTransform.localScale;
             }
 
             if (Mouse.current.rightButton.wasPressedThisFrame)
@@ -63,32 +56,21 @@ namespace Game.Core
         private void SpawnUnits()
         {
             var ray = _mainCamera.ScreenPointToRay(Mouse.current.position.ReadValue());
-            if (Physics.Raycast(ray, out var hit))
+            var plane = new Plane(Vector3.up, Vector3.zero);
+            if (plane.Raycast(ray, out var enter))
             {
                 var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
                 var query = entityManager.CreateEntityQuery(typeof(Spawner));
+               
                 if (query.IsEmptyIgnoreFilter) return;
 
                 var spawnerEntity = query.GetSingletonEntity();
                 var spawner = entityManager.GetComponentData<Spawner>(spawnerEntity);
                 if (spawner.SpawnRequested) return;
                 spawner.SpawnRequested = true;
-                spawner.SpawnPosition = hit.point + Vector3.up;
+                spawner.SpawnPosition = ray.GetPoint(enter) + Vector3.up;
                 entityManager.SetComponentData(spawnerEntity, spawner);
                 query.Dispose();
-            }
-        }
-
-        private void SelectUnits()
-        {
-            UnselectAllUnits();
-            if (_selectorRect.sizeDelta.magnitude > 0.1f)
-            {
-                SelectUnitsInRect();
-            }
-            else
-            {
-                SelectSingleUnit();
             }
         }
 
@@ -124,7 +106,7 @@ namespace Game.Core
             }
         }
 
-        private void SelectUnitsInRect()
+        private void SelectMultipleUnits()
         {
             var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
             var query = new EntityQueryBuilder(Allocator.Temp)
@@ -135,15 +117,8 @@ namespace Game.Core
             for (var i = 0; i < localTransformArray.Length; i++)
             {
                 var unitTransform = localTransformArray[i];
-                var screenPosition = _mainCamera.WorldToScreenPoint(unitTransform.Position);
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    _selectorRect,
-                    screenPosition,
-                    null,
-                    out var localPoint);
-                var isInside = _selectorRect.rect.Contains(localPoint);
                 var unitSelect = selectsArray[i];
-                if (isInside)
+                if (_selector.IsInsideSelectionArea(unitTransform.Position))
                 {
                     unitSelect.IsSelected = true;
                     entityManager.RemoveComponent<Disabled>(unitSelect.VisualEntity);
@@ -218,6 +193,11 @@ namespace Game.Core
             }
 
             return result;
+        }
+
+        private void OnDisable()
+        {
+            _selector.OnSelectionEnded -= OnSelectionEnded;
         }
     }
 }
